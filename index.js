@@ -5799,7 +5799,7 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('fetchSettings');
 }
 var ASM_CONSTS = {
-  1569440: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
+  1588928: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
 };
 
 // Imports from the Wasm binary.
@@ -5810,6 +5810,7 @@ var _crx_usec = Module['_crx_usec'] = makeInvalidEarlyAccess('_crx_usec');
 var _crx_sleep = Module['_crx_sleep'] = makeInvalidEarlyAccess('_crx_sleep');
 var _crx_init = Module['_crx_init'] = makeInvalidEarlyAccess('_crx_init');
 var _crx_exit = Module['_crx_exit'] = makeInvalidEarlyAccess('_crx_exit');
+var _crx_reset = Module['_crx_reset'] = makeInvalidEarlyAccess('_crx_reset');
 var _crx_start = Module['_crx_start'] = makeInvalidEarlyAccess('_crx_start');
 var _crx_stop = Module['_crx_stop'] = makeInvalidEarlyAccess('_crx_stop');
 var _crx_set_sin_filter = Module['_crx_set_sin_filter'] = makeInvalidEarlyAccess('_crx_set_sin_filter');
@@ -5899,6 +5900,7 @@ function assignWasmExports(wasmExports) {
   assert(typeof wasmExports['crx_sleep'] != 'undefined', 'missing Wasm export: crx_sleep');
   assert(typeof wasmExports['crx_init'] != 'undefined', 'missing Wasm export: crx_init');
   assert(typeof wasmExports['crx_exit'] != 'undefined', 'missing Wasm export: crx_exit');
+  assert(typeof wasmExports['crx_reset'] != 'undefined', 'missing Wasm export: crx_reset');
   assert(typeof wasmExports['crx_start'] != 'undefined', 'missing Wasm export: crx_start');
   assert(typeof wasmExports['crx_stop'] != 'undefined', 'missing Wasm export: crx_stop');
   assert(typeof wasmExports['crx_set_sin_filter'] != 'undefined', 'missing Wasm export: crx_set_sin_filter');
@@ -5985,6 +5987,7 @@ function assignWasmExports(wasmExports) {
   _crx_sleep = Module['_crx_sleep'] = createExportWrapper('crx_sleep', 1);
   _crx_init = Module['_crx_init'] = createExportWrapper('crx_init', 3);
   _crx_exit = Module['_crx_exit'] = createExportWrapper('crx_exit', 0);
+  _crx_reset = Module['_crx_reset'] = createExportWrapper('crx_reset', 0);
   _crx_start = Module['_crx_start'] = createExportWrapper('crx_start', 0);
   _crx_stop = Module['_crx_stop'] = createExportWrapper('crx_stop', 0);
   _crx_set_sin_filter = Module['_crx_set_sin_filter'] = createExportWrapper('crx_set_sin_filter', 4);
