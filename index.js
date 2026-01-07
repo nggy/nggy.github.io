@@ -5799,7 +5799,7 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('fetchSettings');
 }
 var ASM_CONSTS = {
-  1588928: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
+  1588976: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
 };
 
 // Imports from the Wasm binary.
@@ -5820,6 +5820,7 @@ var _crx_set_lead = Module['_crx_set_lead'] = makeInvalidEarlyAccess('_crx_set_l
 var _crx_set_grid = Module['_crx_set_grid'] = makeInvalidEarlyAccess('_crx_set_grid');
 var _crx_set_speed = Module['_crx_set_speed'] = makeInvalidEarlyAccess('_crx_set_speed');
 var _crx_set_ampl = Module['_crx_set_ampl'] = makeInvalidEarlyAccess('_crx_set_ampl');
+var _crx_drv_read = Module['_crx_drv_read'] = makeInvalidEarlyAccess('_crx_drv_read');
 var _crx_get_online = Module['_crx_get_online'] = makeInvalidEarlyAccess('_crx_get_online');
 var _crx_get_hr = Module['_crx_get_hr'] = makeInvalidEarlyAccess('_crx_get_hr');
 var __Z19crx_double_elementsPii = Module['__Z19crx_double_elementsPii'] = makeInvalidEarlyAccess('__Z19crx_double_elementsPii');
@@ -5910,6 +5911,7 @@ function assignWasmExports(wasmExports) {
   assert(typeof wasmExports['crx_set_grid'] != 'undefined', 'missing Wasm export: crx_set_grid');
   assert(typeof wasmExports['crx_set_speed'] != 'undefined', 'missing Wasm export: crx_set_speed');
   assert(typeof wasmExports['crx_set_ampl'] != 'undefined', 'missing Wasm export: crx_set_ampl');
+  assert(typeof wasmExports['crx_drv_read'] != 'undefined', 'missing Wasm export: crx_drv_read');
   assert(typeof wasmExports['crx_get_online'] != 'undefined', 'missing Wasm export: crx_get_online');
   assert(typeof wasmExports['crx_get_hr'] != 'undefined', 'missing Wasm export: crx_get_hr');
   assert(typeof wasmExports['_Z19crx_double_elementsPii'] != 'undefined', 'missing Wasm export: _Z19crx_double_elementsPii');
@@ -5997,7 +5999,8 @@ function assignWasmExports(wasmExports) {
   _crx_set_grid = Module['_crx_set_grid'] = createExportWrapper('crx_set_grid', 1);
   _crx_set_speed = Module['_crx_set_speed'] = createExportWrapper('crx_set_speed', 1);
   _crx_set_ampl = Module['_crx_set_ampl'] = createExportWrapper('crx_set_ampl', 1);
-  _crx_get_online = Module['_crx_get_online'] = createExportWrapper('crx_get_online', 3);
+  _crx_drv_read = Module['_crx_drv_read'] = createExportWrapper('crx_drv_read', 0);
+  _crx_get_online = Module['_crx_get_online'] = createExportWrapper('crx_get_online', 2);
   _crx_get_hr = Module['_crx_get_hr'] = createExportWrapper('crx_get_hr', 0);
   __Z19crx_double_elementsPii = Module['__Z19crx_double_elementsPii'] = createExportWrapper('_Z19crx_double_elementsPii', 2);
   _crx_put_pack = Module['_crx_put_pack'] = createExportWrapper('crx_put_pack', 1);
