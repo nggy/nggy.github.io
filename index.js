@@ -5799,7 +5799,7 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('fetchSettings');
 }
 var ASM_CONSTS = {
-  1588976: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
+  1588608: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
 };
 
 // Imports from the Wasm binary.
@@ -5996,7 +5996,7 @@ function assignWasmExports(wasmExports) {
   _crx_set_base_filter = Module['_crx_set_base_filter'] = createExportWrapper('crx_set_base_filter', 1);
   _crx_set_noise_filter = Module['_crx_set_noise_filter'] = createExportWrapper('crx_set_noise_filter', 1);
   _crx_set_lead = Module['_crx_set_lead'] = createExportWrapper('crx_set_lead', 1);
-  _crx_set_grid = Module['_crx_set_grid'] = createExportWrapper('crx_set_grid', 1);
+  _crx_set_grid = Module['_crx_set_grid'] = createExportWrapper('crx_set_grid', 2);
   _crx_set_speed = Module['_crx_set_speed'] = createExportWrapper('crx_set_speed', 1);
   _crx_set_ampl = Module['_crx_set_ampl'] = createExportWrapper('crx_set_ampl', 1);
   _crx_drv_read = Module['_crx_drv_read'] = createExportWrapper('crx_drv_read', 0);
