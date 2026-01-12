@@ -2650,6 +2650,90 @@ async function createWasm() {
       }
     };
 
+  var _alDeleteBuffers = (count, pBufferIds) => {
+      if (!AL.currentCtx) {
+        return;
+      }
+  
+      for (var i = 0; i < count; ++i) {
+        var bufId = HEAP32[(((pBufferIds)+(i*4))>>2)];
+        /// Deleting the zero buffer is a legal NOP, so ignore it
+        if (bufId === 0) {
+          continue;
+        }
+  
+        // Make sure the buffer index is valid.
+        if (!AL.buffers[bufId]) {
+          AL.currentCtx.err = 40961;
+          return;
+        }
+  
+        // Make sure the buffer is no longer in use.
+        if (AL.buffers[bufId].refCount) {
+          AL.currentCtx.err = 40964;
+          return;
+        }
+      }
+  
+      for (var i = 0; i < count; ++i) {
+        var bufId = HEAP32[(((pBufferIds)+(i*4))>>2)];
+        if (bufId === 0) {
+          continue;
+        }
+  
+        AL.deviceRefCounts[AL.buffers[bufId].deviceId]--;
+        delete AL.buffers[bufId];
+        AL.freeIds.push(bufId);
+      }
+    };
+
+  var _alSourcei = (sourceId, param, value) => {
+      switch (param) {
+      case 0x202 /* AL_SOURCE_RELATIVE */:
+      case 0x1001 /* AL_CONE_INNER_ANGLE */:
+      case 0x1002 /* AL_CONE_OUTER_ANGLE */:
+      case 0x1007 /* AL_LOOPING */:
+      case 0x1009 /* AL_BUFFER */:
+      case 0x1020 /* AL_REFERENCE_DISTANCE */:
+      case 0x1021 /* AL_ROLLOFF_FACTOR */:
+      case 0x1023 /* AL_MAX_DISTANCE */:
+      case 0x1024 /* AL_SEC_OFFSET */:
+      case 0x1025 /* AL_SAMPLE_OFFSET */:
+      case 0x1026 /* AL_BYTE_OFFSET */:
+      case 0x1214 /* AL_SOURCE_SPATIALIZE_SOFT */:
+      case 0x2009 /* AL_BYTE_LENGTH_SOFT */:
+      case 0x200A /* AL_SAMPLE_LENGTH_SOFT */:
+      case 53248:
+        AL.setSourceParam('alSourcei', sourceId, param, value);
+        break;
+      default:
+        AL.setSourceParam('alSourcei', sourceId, param, null);
+        break;
+      }
+    };
+  
+  var _alDeleteSources = (count, pSourceIds) => {
+      if (!AL.currentCtx) {
+        return;
+      }
+  
+      for (var i = 0; i < count; ++i) {
+        var srcId = HEAP32[(((pSourceIds)+(i*4))>>2)];
+        if (!AL.currentCtx.sources[srcId]) {
+          AL.currentCtx.err = 40961;
+          return;
+        }
+      }
+  
+      for (var i = 0; i < count; ++i) {
+        var srcId = HEAP32[(((pSourceIds)+(i*4))>>2)];
+        AL.setSourceState(AL.currentCtx.sources[srcId], 4116);
+        _alSourcei(srcId, 0x1009 /* AL_BUFFER */, 0);
+        delete AL.currentCtx.sources[srcId];
+        AL.freeIds.push(srcId);
+      }
+    };
+
   var _alGenBuffers = (count, pBufferIds) => {
       if (!AL.currentCtx) {
         return;
@@ -2730,30 +2814,6 @@ async function createWasm() {
       AL.setSourceState(src, 4114);
     };
 
-  var _alSourcei = (sourceId, param, value) => {
-      switch (param) {
-      case 0x202 /* AL_SOURCE_RELATIVE */:
-      case 0x1001 /* AL_CONE_INNER_ANGLE */:
-      case 0x1002 /* AL_CONE_OUTER_ANGLE */:
-      case 0x1007 /* AL_LOOPING */:
-      case 0x1009 /* AL_BUFFER */:
-      case 0x1020 /* AL_REFERENCE_DISTANCE */:
-      case 0x1021 /* AL_ROLLOFF_FACTOR */:
-      case 0x1023 /* AL_MAX_DISTANCE */:
-      case 0x1024 /* AL_SEC_OFFSET */:
-      case 0x1025 /* AL_SAMPLE_OFFSET */:
-      case 0x1026 /* AL_BYTE_OFFSET */:
-      case 0x1214 /* AL_SOURCE_SPATIALIZE_SOFT */:
-      case 0x2009 /* AL_BYTE_LENGTH_SOFT */:
-      case 0x200A /* AL_SAMPLE_LENGTH_SOFT */:
-      case 53248:
-        AL.setSourceParam('alSourcei', sourceId, param, value);
-        break;
-      default:
-        AL.setSourceParam('alSourcei', sourceId, param, null);
-        break;
-      }
-    };
 
   var _alcCloseDevice = (deviceId) => {
       if (!(deviceId in AL.deviceRefCounts) || AL.deviceRefCounts[deviceId] > 0) {
@@ -7493,7 +7553,7 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('fetchSettings');
 }
 var ASM_CONSTS = {
-  1593088: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
+  1593168: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
 };
 
 // Imports from the Wasm binary.
@@ -7514,8 +7574,8 @@ var _crx_set_lead = Module['_crx_set_lead'] = makeInvalidEarlyAccess('_crx_set_l
 var _crx_set_grid = Module['_crx_set_grid'] = makeInvalidEarlyAccess('_crx_set_grid');
 var _crx_set_speed = Module['_crx_set_speed'] = makeInvalidEarlyAccess('_crx_set_speed');
 var _crx_set_ampl = Module['_crx_set_ampl'] = makeInvalidEarlyAccess('_crx_set_ampl');
-var _crx_drv_read = Module['_crx_drv_read'] = makeInvalidEarlyAccess('_crx_drv_read');
-var _crx_get_online = Module['_crx_get_online'] = makeInvalidEarlyAccess('_crx_get_online');
+var _crx_read = Module['_crx_read'] = makeInvalidEarlyAccess('_crx_read');
+var _crx_get_freq_conv = Module['_crx_get_freq_conv'] = makeInvalidEarlyAccess('_crx_get_freq_conv');
 var _crx_get_hr = Module['_crx_get_hr'] = makeInvalidEarlyAccess('_crx_get_hr');
 var __Z19crx_double_elementsPii = Module['__Z19crx_double_elementsPii'] = makeInvalidEarlyAccess('__Z19crx_double_elementsPii');
 var _crx_put_pack = Module['_crx_put_pack'] = makeInvalidEarlyAccess('_crx_put_pack');
@@ -7605,8 +7665,8 @@ function assignWasmExports(wasmExports) {
   assert(typeof wasmExports['crx_set_grid'] != 'undefined', 'missing Wasm export: crx_set_grid');
   assert(typeof wasmExports['crx_set_speed'] != 'undefined', 'missing Wasm export: crx_set_speed');
   assert(typeof wasmExports['crx_set_ampl'] != 'undefined', 'missing Wasm export: crx_set_ampl');
-  assert(typeof wasmExports['crx_drv_read'] != 'undefined', 'missing Wasm export: crx_drv_read');
-  assert(typeof wasmExports['crx_get_online'] != 'undefined', 'missing Wasm export: crx_get_online');
+  assert(typeof wasmExports['crx_read'] != 'undefined', 'missing Wasm export: crx_read');
+  assert(typeof wasmExports['crx_get_freq_conv'] != 'undefined', 'missing Wasm export: crx_get_freq_conv');
   assert(typeof wasmExports['crx_get_hr'] != 'undefined', 'missing Wasm export: crx_get_hr');
   assert(typeof wasmExports['_Z19crx_double_elementsPii'] != 'undefined', 'missing Wasm export: _Z19crx_double_elementsPii');
   assert(typeof wasmExports['crx_put_pack'] != 'undefined', 'missing Wasm export: crx_put_pack');
@@ -7693,8 +7753,8 @@ function assignWasmExports(wasmExports) {
   _crx_set_grid = Module['_crx_set_grid'] = createExportWrapper('crx_set_grid', 2);
   _crx_set_speed = Module['_crx_set_speed'] = createExportWrapper('crx_set_speed', 1);
   _crx_set_ampl = Module['_crx_set_ampl'] = createExportWrapper('crx_set_ampl', 1);
-  _crx_drv_read = Module['_crx_drv_read'] = createExportWrapper('crx_drv_read', 0);
-  _crx_get_online = Module['_crx_get_online'] = createExportWrapper('crx_get_online', 2);
+  _crx_read = Module['_crx_read'] = createExportWrapper('crx_read', 0);
+  _crx_get_freq_conv = Module['_crx_get_freq_conv'] = createExportWrapper('crx_get_freq_conv', 2);
   _crx_get_hr = Module['_crx_get_hr'] = createExportWrapper('crx_get_hr', 0);
   __Z19crx_double_elementsPii = Module['__Z19crx_double_elementsPii'] = createExportWrapper('_Z19crx_double_elementsPii', 2);
   _crx_put_pack = Module['_crx_put_pack'] = createExportWrapper('crx_put_pack', 1);
@@ -7775,6 +7835,10 @@ var wasmImports = {
   _abort_js: __abort_js,
   /** @export */
   alBufferData: _alBufferData,
+  /** @export */
+  alDeleteBuffers: _alDeleteBuffers,
+  /** @export */
+  alDeleteSources: _alDeleteSources,
   /** @export */
   alGenBuffers: _alGenBuffers,
   /** @export */
