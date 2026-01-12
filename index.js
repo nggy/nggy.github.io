@@ -7553,7 +7553,7 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('fetchSettings');
 }
 var ASM_CONSTS = {
-  1593168: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
+  1593152: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
 };
 
 // Imports from the Wasm binary.
