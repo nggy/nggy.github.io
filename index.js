@@ -7553,7 +7553,7 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('fetchSettings');
 }
 var ASM_CONSTS = {
-  1593152: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
+  1592960: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
 };
 
 // Imports from the Wasm binary.
@@ -7754,7 +7754,7 @@ function assignWasmExports(wasmExports) {
   _crx_set_speed = Module['_crx_set_speed'] = createExportWrapper('crx_set_speed', 1);
   _crx_set_ampl = Module['_crx_set_ampl'] = createExportWrapper('crx_set_ampl', 1);
   _crx_read = Module['_crx_read'] = createExportWrapper('crx_read', 0);
-  _crx_get_freq_conv = Module['_crx_get_freq_conv'] = createExportWrapper('crx_get_freq_conv', 2);
+  _crx_get_freq_conv = Module['_crx_get_freq_conv'] = createExportWrapper('crx_get_freq_conv', 3);
   _crx_get_hr = Module['_crx_get_hr'] = createExportWrapper('crx_get_hr', 0);
   __Z19crx_double_elementsPii = Module['__Z19crx_double_elementsPii'] = createExportWrapper('_Z19crx_double_elementsPii', 2);
   _crx_put_pack = Module['_crx_put_pack'] = createExportWrapper('crx_put_pack', 1);
