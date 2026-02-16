@@ -7553,32 +7553,12 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('fetchSettings');
 }
 var ASM_CONSTS = {
-  1592960: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
+  1388800: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
 };
 
 // Imports from the Wasm binary.
-var _crx_drv_cmd8 = Module['_crx_drv_cmd8'] = makeInvalidEarlyAccess('_crx_drv_cmd8');
 var _free = makeInvalidEarlyAccess('_free');
 var _malloc = makeInvalidEarlyAccess('_malloc');
-var _crx_usec = Module['_crx_usec'] = makeInvalidEarlyAccess('_crx_usec');
-var _crx_sleep = Module['_crx_sleep'] = makeInvalidEarlyAccess('_crx_sleep');
-var _crx_init = Module['_crx_init'] = makeInvalidEarlyAccess('_crx_init');
-var _crx_exit = Module['_crx_exit'] = makeInvalidEarlyAccess('_crx_exit');
-var _crx_reset = Module['_crx_reset'] = makeInvalidEarlyAccess('_crx_reset');
-var _crx_start = Module['_crx_start'] = makeInvalidEarlyAccess('_crx_start');
-var _crx_stop = Module['_crx_stop'] = makeInvalidEarlyAccess('_crx_stop');
-var _crx_set_sin_filter = Module['_crx_set_sin_filter'] = makeInvalidEarlyAccess('_crx_set_sin_filter');
-var _crx_set_base_filter = Module['_crx_set_base_filter'] = makeInvalidEarlyAccess('_crx_set_base_filter');
-var _crx_set_noise_filter = Module['_crx_set_noise_filter'] = makeInvalidEarlyAccess('_crx_set_noise_filter');
-var _crx_set_lead = Module['_crx_set_lead'] = makeInvalidEarlyAccess('_crx_set_lead');
-var _crx_set_grid = Module['_crx_set_grid'] = makeInvalidEarlyAccess('_crx_set_grid');
-var _crx_set_speed = Module['_crx_set_speed'] = makeInvalidEarlyAccess('_crx_set_speed');
-var _crx_set_ampl = Module['_crx_set_ampl'] = makeInvalidEarlyAccess('_crx_set_ampl');
-var _crx_read = Module['_crx_read'] = makeInvalidEarlyAccess('_crx_read');
-var _crx_get_freq_conv = Module['_crx_get_freq_conv'] = makeInvalidEarlyAccess('_crx_get_freq_conv');
-var _crx_get_hr = Module['_crx_get_hr'] = makeInvalidEarlyAccess('_crx_get_hr');
-var __Z19crx_double_elementsPii = Module['__Z19crx_double_elementsPii'] = makeInvalidEarlyAccess('__Z19crx_double_elementsPii');
-var _crx_put_pack = Module['_crx_put_pack'] = makeInvalidEarlyAccess('_crx_put_pack');
 var _main = Module['_main'] = makeInvalidEarlyAccess('_main');
 var _emwgpuCreateBindGroup = makeInvalidEarlyAccess('_emwgpuCreateBindGroup');
 var _emwgpuCreateBindGroupLayout = makeInvalidEarlyAccess('_emwgpuCreateBindGroupLayout');
@@ -7648,28 +7628,8 @@ var __indirect_function_table = makeInvalidEarlyAccess('__indirect_function_tabl
 var wasmMemory = makeInvalidEarlyAccess('wasmMemory');
 
 function assignWasmExports(wasmExports) {
-  assert(typeof wasmExports['crx_drv_cmd8'] != 'undefined', 'missing Wasm export: crx_drv_cmd8');
   assert(typeof wasmExports['free'] != 'undefined', 'missing Wasm export: free');
   assert(typeof wasmExports['malloc'] != 'undefined', 'missing Wasm export: malloc');
-  assert(typeof wasmExports['crx_usec'] != 'undefined', 'missing Wasm export: crx_usec');
-  assert(typeof wasmExports['crx_sleep'] != 'undefined', 'missing Wasm export: crx_sleep');
-  assert(typeof wasmExports['crx_init'] != 'undefined', 'missing Wasm export: crx_init');
-  assert(typeof wasmExports['crx_exit'] != 'undefined', 'missing Wasm export: crx_exit');
-  assert(typeof wasmExports['crx_reset'] != 'undefined', 'missing Wasm export: crx_reset');
-  assert(typeof wasmExports['crx_start'] != 'undefined', 'missing Wasm export: crx_start');
-  assert(typeof wasmExports['crx_stop'] != 'undefined', 'missing Wasm export: crx_stop');
-  assert(typeof wasmExports['crx_set_sin_filter'] != 'undefined', 'missing Wasm export: crx_set_sin_filter');
-  assert(typeof wasmExports['crx_set_base_filter'] != 'undefined', 'missing Wasm export: crx_set_base_filter');
-  assert(typeof wasmExports['crx_set_noise_filter'] != 'undefined', 'missing Wasm export: crx_set_noise_filter');
-  assert(typeof wasmExports['crx_set_lead'] != 'undefined', 'missing Wasm export: crx_set_lead');
-  assert(typeof wasmExports['crx_set_grid'] != 'undefined', 'missing Wasm export: crx_set_grid');
-  assert(typeof wasmExports['crx_set_speed'] != 'undefined', 'missing Wasm export: crx_set_speed');
-  assert(typeof wasmExports['crx_set_ampl'] != 'undefined', 'missing Wasm export: crx_set_ampl');
-  assert(typeof wasmExports['crx_read'] != 'undefined', 'missing Wasm export: crx_read');
-  assert(typeof wasmExports['crx_get_freq_conv'] != 'undefined', 'missing Wasm export: crx_get_freq_conv');
-  assert(typeof wasmExports['crx_get_hr'] != 'undefined', 'missing Wasm export: crx_get_hr');
-  assert(typeof wasmExports['_Z19crx_double_elementsPii'] != 'undefined', 'missing Wasm export: _Z19crx_double_elementsPii');
-  assert(typeof wasmExports['crx_put_pack'] != 'undefined', 'missing Wasm export: crx_put_pack');
   assert(typeof wasmExports['__main_argc_argv'] != 'undefined', 'missing Wasm export: __main_argc_argv');
   assert(typeof wasmExports['emwgpuCreateBindGroup'] != 'undefined', 'missing Wasm export: emwgpuCreateBindGroup');
   assert(typeof wasmExports['emwgpuCreateBindGroupLayout'] != 'undefined', 'missing Wasm export: emwgpuCreateBindGroupLayout');
@@ -7736,28 +7696,8 @@ function assignWasmExports(wasmExports) {
   assert(typeof wasmExports['asyncify_stop_rewind'] != 'undefined', 'missing Wasm export: asyncify_stop_rewind');
   assert(typeof wasmExports['memory'] != 'undefined', 'missing Wasm export: memory');
   assert(typeof wasmExports['__indirect_function_table'] != 'undefined', 'missing Wasm export: __indirect_function_table');
-  _crx_drv_cmd8 = Module['_crx_drv_cmd8'] = createExportWrapper('crx_drv_cmd8', 4);
   _free = createExportWrapper('free', 1);
   _malloc = createExportWrapper('malloc', 1);
-  _crx_usec = Module['_crx_usec'] = createExportWrapper('crx_usec', 0);
-  _crx_sleep = Module['_crx_sleep'] = createExportWrapper('crx_sleep', 1);
-  _crx_init = Module['_crx_init'] = createExportWrapper('crx_init', 3);
-  _crx_exit = Module['_crx_exit'] = createExportWrapper('crx_exit', 0);
-  _crx_reset = Module['_crx_reset'] = createExportWrapper('crx_reset', 0);
-  _crx_start = Module['_crx_start'] = createExportWrapper('crx_start', 0);
-  _crx_stop = Module['_crx_stop'] = createExportWrapper('crx_stop', 0);
-  _crx_set_sin_filter = Module['_crx_set_sin_filter'] = createExportWrapper('crx_set_sin_filter', 4);
-  _crx_set_base_filter = Module['_crx_set_base_filter'] = createExportWrapper('crx_set_base_filter', 1);
-  _crx_set_noise_filter = Module['_crx_set_noise_filter'] = createExportWrapper('crx_set_noise_filter', 1);
-  _crx_set_lead = Module['_crx_set_lead'] = createExportWrapper('crx_set_lead', 1);
-  _crx_set_grid = Module['_crx_set_grid'] = createExportWrapper('crx_set_grid', 2);
-  _crx_set_speed = Module['_crx_set_speed'] = createExportWrapper('crx_set_speed', 1);
-  _crx_set_ampl = Module['_crx_set_ampl'] = createExportWrapper('crx_set_ampl', 1);
-  _crx_read = Module['_crx_read'] = createExportWrapper('crx_read', 0);
-  _crx_get_freq_conv = Module['_crx_get_freq_conv'] = createExportWrapper('crx_get_freq_conv', 3);
-  _crx_get_hr = Module['_crx_get_hr'] = createExportWrapper('crx_get_hr', 0);
-  __Z19crx_double_elementsPii = Module['__Z19crx_double_elementsPii'] = createExportWrapper('_Z19crx_double_elementsPii', 2);
-  _crx_put_pack = Module['_crx_put_pack'] = createExportWrapper('crx_put_pack', 1);
   _main = Module['_main'] = createExportWrapper('__main_argc_argv', 2);
   _emwgpuCreateBindGroup = createExportWrapper('emwgpuCreateBindGroup', 1);
   _emwgpuCreateBindGroupLayout = createExportWrapper('emwgpuCreateBindGroupLayout', 1);
