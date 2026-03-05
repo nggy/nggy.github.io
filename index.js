@@ -1,7 +1,7 @@
 // This code implements the `-sMODULARIZE` settings by taking the generated
 // JS program code (INNER_JS_CODE) and wrapping it in a factory function.
 
-// When targetting node and ES6 we use `await import ..` in the generated code
+// When targeting node and ES6 we use `await import ..` in the generated code
 // so the outer function needs to be marked as async.
 async function Module(moduleArg = {}) {
   var moduleRtn;
@@ -72,10 +72,13 @@ var Module = moduleArg;
 // Determine the runtime environment we are in. You can customize this by
 // setting the ENVIRONMENT setting at compile time (see settings.js).
 
-var ENVIRONMENT_IS_WEB = true;
-var ENVIRONMENT_IS_WORKER = false;
-var ENVIRONMENT_IS_NODE = false;
-var ENVIRONMENT_IS_SHELL = false;
+// Attempt to auto-detect the environment
+var ENVIRONMENT_IS_WEB = !!globalThis.window;
+var ENVIRONMENT_IS_WORKER = !!globalThis.WorkerGlobalScope;
+// N.b. Electron.js environment is simultaneously a NODE-environment, but
+// also a web environment.
+var ENVIRONMENT_IS_NODE = globalThis.process?.versions?.node && globalThis.process?.type != 'renderer';
+var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER;
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
@@ -187,7 +190,7 @@ if (!globalThis.WebAssembly) {
 var ABORT = false;
 
 // set by exit() and abort().  Passed to 'onExit' handler.
-// NOTE: This is also used as the process return code code in shell environments
+// NOTE: This is also used as the process return code in shell environments
 // but only when noExitRuntime is false.
 var EXITSTATUS;
 
@@ -370,9 +373,9 @@ function updateMemoryViews() {
   var b = wasmMemory.buffer;
   HEAP8 = new Int8Array(b);
   HEAP16 = new Int16Array(b);
-  HEAPU8 = new Uint8Array(b);
-  HEAPU16 = new Uint16Array(b);
-  HEAP32 = new Int32Array(b);
+  Module['HEAPU8'] = HEAPU8 = new Uint8Array(b);
+  Module['HEAPU16'] = HEAPU16 = new Uint16Array(b);
+  Module['HEAP32'] = HEAP32 = new Int32Array(b);
   HEAPU32 = new Uint32Array(b);
   HEAPF32 = new Float32Array(b);
   HEAPF64 = new Float64Array(b);
@@ -459,7 +462,7 @@ function abort(what) {
 
   ABORT = true;
 
-  if (what.indexOf('RuntimeError: unreachable') >= 0) {
+  if (what.search(/RuntimeError: [Uu]nreachable/) >= 0) {
     what += '. "unreachable" may be due to ASYNCIFY_STACK_SIZE not being large enough (try increasing it)';
   }
 
@@ -536,7 +539,7 @@ function getBinarySync(file) {
   if (readBinary) {
     return readBinary(file);
   }
-  // Throwing a plain string here, even though it not normally adviables since
+  // Throwing a plain string here, even though it not normally advisable since
   // this gets turning into an `abort` in instantiateArrayBuffer.
   throw 'both async and sync fetching of the wasm failed';
 }
@@ -593,7 +596,7 @@ async function instantiateAsync(binary, binaryFile, imports) {
 
 function getWasmImports() {
   // instrumenting imports is used in asyncify in two ways: to add assertions
-  // that check for proper import use, and for ASYNCIFY=2 we use them to set up
+  // that check for proper import use, and for JSPI we use them to set up
   // the Promise API on the import side.
   Asyncify.instrumentWasmImports(wasmImports);
   // prepare imports
@@ -721,9 +724,9 @@ async function createWasm() {
 
   
     /**
-     * @param {number} ptr
-     * @param {string} type
-     */
+   * @param {number} ptr
+   * @param {string} type
+   */
   function getValue(ptr, type = 'i8') {
     if (type.endsWith('*')) type = '*';
     switch (type) {
@@ -750,10 +753,10 @@ async function createWasm() {
 
   
     /**
-     * @param {number} ptr
-     * @param {number} value
-     * @param {string} type
-     */
+   * @param {number} ptr
+   * @param {number} value
+   * @param {string} type
+   */
   function setValue(ptr, value, type = 'i8') {
     if (type.endsWith('*')) type = '*';
     switch (type) {
@@ -798,15 +801,15 @@ async function createWasm() {
   
   
     /**
-     * Given a pointer 'idx' to a null-terminated UTF8-encoded string in the given
-     * array that contains uint8 values, returns a copy of that string as a
-     * Javascript String object.
-     * heapOrArray is either a regular array, or a JavaScript typed array view.
-     * @param {number=} idx
-     * @param {number=} maxBytesToRead
-     * @param {boolean=} ignoreNul - If true, the function will not stop on a NUL character.
-     * @return {string}
-     */
+   * Given a pointer 'idx' to a null-terminated UTF8-encoded string in the given
+   * array that contains uint8 values, returns a copy of that string as a
+   * Javascript String object.
+   * heapOrArray is either a regular array, or a JavaScript typed array view.
+   * @param {number=} idx
+   * @param {number=} maxBytesToRead
+   * @param {boolean=} ignoreNul - If true, the function will not stop on a NUL character.
+   * @return {string}
+   */
   var UTF8ArrayToString = (heapOrArray, idx = 0, maxBytesToRead, ignoreNul) => {
   
       var endPtr = findStringEnd(heapOrArray, idx, maxBytesToRead, ignoreNul);
@@ -844,18 +847,18 @@ async function createWasm() {
     };
   
     /**
-     * Given a pointer 'ptr' to a null-terminated UTF8-encoded string in the
-     * emscripten HEAP, returns a copy of that string as a Javascript String object.
-     *
-     * @param {number} ptr
-     * @param {number=} maxBytesToRead - An optional length that specifies the
-     *   maximum number of bytes to read. You can omit this parameter to scan the
-     *   string until the first 0 byte. If maxBytesToRead is passed, and the string
-     *   at [ptr, ptr+maxBytesToReadr[ contains a null byte in the middle, then the
-     *   string will cut short at that byte index.
-     * @param {boolean=} ignoreNul - If true, the function will not stop on a NUL character.
-     * @return {string}
-     */
+   * Given a pointer 'ptr' to a null-terminated UTF8-encoded string in the
+   * emscripten HEAP, returns a copy of that string as a Javascript String object.
+   *
+   * @param {number} ptr
+   * @param {number=} maxBytesToRead - An optional length that specifies the
+   *   maximum number of bytes to read. You can omit this parameter to scan the
+   *   string until the first 0 byte. If maxBytesToRead is passed, and the string
+   *   at [ptr, ptr+maxBytesToReadr[ contains a null byte in the middle, then the
+   *   string will cut short at that byte index.
+   * @param {boolean=} ignoreNul - If true, the function will not stop on a NUL character.
+   * @return {string}
+   */
   var UTF8ToString = (ptr, maxBytesToRead, ignoreNul) => {
       assert(typeof ptr == 'number', `UTF8ToString expects a number (got ${typeof ptr})`);
       return ptr ? UTF8ArrayToString(HEAPU8, ptr, maxBytesToRead, ignoreNul) : '';
@@ -959,13 +962,12 @@ async function createWasm() {
           var timeUntilNextTick = Math.max(0, MainLoop.tickStartTime + value - _emscripten_get_now())|0;
           setTimeout(MainLoop.runner, timeUntilNextTick); // doing this each time means that on exception, we stop
         };
-        MainLoop.method = 'timeout';
       } else if (mode == 1) {
         MainLoop.scheduler = function MainLoop_scheduler_rAF() {
           MainLoop.requestAnimationFrame(MainLoop.runner);
         };
-        MainLoop.method = 'rAF';
-      } else if (mode == 2) {
+      } else {
+        assert(mode == 2);
         if (!MainLoop.setImmediate) {
           if (globalThis.setImmediate) {
             MainLoop.setImmediate = setImmediate;
@@ -996,7 +998,6 @@ async function createWasm() {
         MainLoop.scheduler = function MainLoop_scheduler_setImmediate() {
           MainLoop.setImmediate(MainLoop.runner);
         };
-        MainLoop.method = 'immediate';
       }
       return 0;
     };
@@ -1071,9 +1072,9 @@ async function createWasm() {
     };
   
     /**
-     * @param {number=} arg
-     * @param {boolean=} noSetTiming
-     */
+   * @param {number=} arg
+   * @param {boolean=} noSetTiming
+   */
   var setMainLoop = (iterFunc, fps, simulateInfiniteLoop, arg, noSetTiming) => {
       assert(!MainLoop.func, 'emscripten_set_main_loop: there can only be one main loop function at once: call emscripten_cancel_main_loop to cancel the previous one before setting a new one with different parameters.');
       MainLoop.func = iterFunc;
@@ -1090,10 +1091,10 @@ async function createWasm() {
       }
   
       // We create the loop runner here but it is not actually running until
-      // _emscripten_set_main_loop_timing is called (which might happen a
+      // _emscripten_set_main_loop_timing is called (which might happen at a
       // later time).  This member signifies that the current runner has not
       // yet been started so that we can call runtimeKeepalivePush when it
-      // gets it timing set for the first time.
+      // gets its timing set for the first time.
       MainLoop.running = false;
       MainLoop.runner = function MainLoop_runner() {
         if (ABORT) return;
@@ -1132,11 +1133,9 @@ async function createWasm() {
           return;
         } else if (MainLoop.timingMode == 0) {
           MainLoop.tickStartTime = _emscripten_get_now();
-        }
-  
-        if (MainLoop.method === 'timeout' && Module['ctx']) {
-          warnOnce('Looks like you are rendering without using requestAnimationFrame for the main loop. You should use 0 for the frame rate in emscripten_set_main_loop in order to use requestAnimationFrame, as that can greatly improve your frame rates!');
-          MainLoop.method = ''; // just warn once per call to set main loop
+          if (Module['ctx']) {
+            warnOnce('Looks like you are rendering without using requestAnimationFrame for the main loop. You should use 0 for the frame rate in emscripten_set_main_loop in order to use requestAnimationFrame, as that can greatly improve your frame rates!');
+          }
         }
   
         MainLoop.runIter(iterFunc);
@@ -1170,17 +1169,17 @@ async function createWasm() {
         return;
       }
       try {
-        func();
-        maybeExit();
+        return func();
       } catch (e) {
         handleException(e);
+      } finally {
+        maybeExit();
       }
     };
   
   var MainLoop = {
   running:false,
   scheduler:null,
-  method:"",
   currentlyRunningMainloop:0,
   func:null,
   arg:0,
@@ -1268,6 +1267,7 @@ async function createWasm() {
   DEVICE_NAME:"Emscripten OpenAL",
   CAPTURE_DEVICE_NAME:"Emscripten OpenAL capture",
   ALC_EXTENSIONS:{
+  ALC_EXT_capture:true,
   ALC_SOFT_pause_device:true,
   ALC_SOFT_HRTF:true,
   },
@@ -1695,7 +1695,7 @@ async function createWasm() {
         // WebAudio does spatialization in world-space coordinates, meaning both the buffer sources and
         // the listener position are in the same absolute coordinate system relative to a fixed origin.
         // By default, OpenAL works this way as well, but it also provides a "listener relative" mode, where
-        // a buffer source's coordinate are interpreted not in absolute world space, but as being relative
+        // a buffer source's coordinates are interpreted not in absolute world space, but as being relative
         // to the listener object itself, so as the listener moves the source appears to move with it
         // with no update required. Since web audio does not support this mode, we must transform the source
         // coordinates from listener-relative space to absolute world space.
@@ -2814,6 +2814,18 @@ async function createWasm() {
       AL.setSourceState(src, 4114);
     };
 
+  var _alSourceStop = (sourceId) => {
+      if (!AL.currentCtx) {
+        return;
+      }
+      var src = AL.currentCtx.sources[sourceId];
+      if (!src) {
+        AL.currentCtx.err = 40961;
+        return;
+      }
+      AL.setSourceState(src, 4116);
+    };
+
 
   var _alcCloseDevice = (deviceId) => {
       if (!(deviceId in AL.deviceRefCounts) || AL.deviceRefCounts[deviceId] > 0) {
@@ -3310,7 +3322,7 @@ async function createWasm() {
   
         var GLctx = context.GLctx;
   
-        // Detect the presence of a few extensions manually, ction GL interop
+        // Detect the presence of a few extensions manually, since the GL interop
         // layer itself will need to know if they exist.
   
         // Extensions that are available in both WebGL 1 and WebGL 2
@@ -4326,6 +4338,17 @@ async function createWasm() {
   var _emscripten_has_asyncify = () => 1;
 
   
+  var _emscripten_html5_remove_event_listener = (target, userData, eventTypeId, callback) => {
+      var eventHandler = {
+        target: findEventTarget(target),
+        userData,
+        eventTypeId,
+        callbackfunc: callback,
+      };
+      return JSEvents.removeSingleHandler(eventHandler);
+    };
+
+  
   
   var findCanvasEventTarget = findEventTarget;
   var _emscripten_get_canvas_element_size = (target, width, height) => {
@@ -4755,7 +4778,7 @@ async function createWasm() {
       var eventSize = 276;
       JSEvents.fullscreenChangeEvent ||= _malloc(eventSize);
   
-      var fullscreenChangeEventhandlerFunc = (e) => {
+      var fullscreenChangeEventHandlerFunc = (e) => {
         var fullscreenChangeEvent = JSEvents.fullscreenChangeEvent;
         fillFullscreenChangeEventData(fullscreenChangeEvent);
   
@@ -4768,7 +4791,7 @@ async function createWasm() {
         eventTypeId,
         userData,
         callbackfunc,
-        handlerFunc: fullscreenChangeEventhandlerFunc,
+        handlerFunc: fullscreenChangeEventHandlerFunc,
         useCapture
       };
       return JSEvents.registerOrRemoveHandler(eventHandler);
@@ -6994,8 +7017,7 @@ async function createWasm() {
           if (typeof original == 'function') {
             var wrapper = Asyncify.instrumentFunction(original);
             ret[x] = wrapper;
-  
-         } else {
+          } else {
             ret[x] = original;
           }
         }
@@ -7090,7 +7112,7 @@ async function createWasm() {
         // Once we have rewound and the stack we no longer need to artificially
         // keep the runtime alive.
         runtimeKeepalivePop();
-        return func();
+        return callUserCallback(func);
       },
   handleSleep(startAsync) {
         assert(Asyncify.state !== Asyncify.State.Disabled, 'Asyncify cannot be done during or after the runtime exits');
@@ -7103,7 +7125,8 @@ async function createWasm() {
           var reachedCallback = false;
           var reachedAfterCallback = false;
           startAsync((handleSleepReturnValue = 0) => {
-            assert(!handleSleepReturnValue || typeof handleSleepReturnValue == 'number' || typeof handleSleepReturnValue == 'boolean'); // old emterpretify API supported other stuff
+            // old emterpretify API supported other stuff
+            assert(['undefined', 'number', 'boolean', 'bigint'].includes(typeof handleSleepReturnValue), `invalid type for handleSleepReturnValue: '${typeof handleSleepReturnValue}'`);
             if (ABORT) return;
             Asyncify.handleSleepReturnValue = handleSleepReturnValue;
             reachedCallback = true;
@@ -7140,7 +7163,7 @@ async function createWasm() {
               // `Asyncify.handleSleepReturnValue`.
               // `Asyncify.handleSleepReturnValue` contains the return
               // value of the last C function to have executed
-              // `Asyncify.handleSleep()`, where as `asyncWasmReturnValue`
+              // `Asyncify.handleSleep()`, whereas `asyncWasmReturnValue`
               // contains the return value of the exported WASM function
               // that may have called C functions that
               // call `Asyncify.handleSleep()`.
@@ -7182,11 +7205,120 @@ async function createWasm() {
         }
         return Asyncify.handleSleepReturnValue;
       },
-  handleAsync:(startAsync) => Asyncify.handleSleep((wakeUp) => {
+  handleAsync:(startAsync) => Asyncify.handleSleep(async (wakeUp) => {
         // TODO: add error handling as a second param when handleSleep implements it.
-        startAsync().then(wakeUp);
+        wakeUp(await startAsync());
       }),
   };
+
+  var getCFunc = (ident) => {
+      var func = Module['_' + ident]; // closure exported function
+      assert(func, 'Cannot call unknown function ' + ident + ', make sure it is exported');
+      return func;
+    };
+  
+  var writeArrayToMemory = (array, buffer) => {
+      assert(array.length >= 0, 'writeArrayToMemory array must have a length (should be an array or typed array)')
+      HEAP8.set(array, buffer);
+    };
+  
+  
+  
+  
+  
+  
+  
+  
+    /**
+   * @param {string|null=} returnType
+   * @param {Array=} argTypes
+   * @param {Array=} args
+   * @param {Object=} opts
+   */
+  var ccall = (ident, returnType, argTypes, args, opts) => {
+      // For fast lookup of conversion functions
+      var toC = {
+        'string': (str) => {
+          var ret = 0;
+          if (str !== null && str !== undefined && str !== 0) { // null string
+            ret = stringToUTF8OnStack(str);
+          }
+          return ret;
+        },
+        'array': (arr) => {
+          var ret = stackAlloc(arr.length);
+          writeArrayToMemory(arr, ret);
+          return ret;
+        }
+      };
+  
+      function convertReturnValue(ret) {
+        if (returnType === 'string') {
+          return UTF8ToString(ret);
+        }
+        if (returnType === 'boolean') return Boolean(ret);
+        return ret;
+      }
+  
+      var func = getCFunc(ident);
+      var cArgs = [];
+      var stack = 0;
+      assert(returnType !== 'array', 'Return type should not be "array".');
+      if (args) {
+        for (var i = 0; i < args.length; i++) {
+          var converter = toC[argTypes[i]];
+          if (converter) {
+            if (stack === 0) stack = stackSave();
+            cArgs[i] = converter(args[i]);
+          } else {
+            cArgs[i] = args[i];
+          }
+        }
+      }
+      // Data for a previous async operation that was in flight before us.
+      var previousAsync = Asyncify.currData;
+      var ret = func(...cArgs);
+      function onDone(ret) {
+        runtimeKeepalivePop();
+        if (stack !== 0) stackRestore(stack);
+        return convertReturnValue(ret);
+      }
+    var asyncMode = opts?.async;
+  
+      // Keep the runtime alive through all calls. Note that this call might not be
+      // async, but for simplicity we push and pop in all calls.
+      runtimeKeepalivePush();
+      if (Asyncify.currData != previousAsync) {
+        // A change in async operation happened. If there was already an async
+        // operation in flight before us, that is an error: we should not start
+        // another async operation while one is active, and we should not stop one
+        // either. The only valid combination is to have no change in the async
+        // data (so we either had one in flight and left it alone, or we didn't have
+        // one), or to have nothing in flight and to start one.
+        assert(!(previousAsync && Asyncify.currData), 'We cannot start an async operation when one is already in flight');
+        assert(!(previousAsync && !Asyncify.currData), 'We cannot stop an async operation in flight');
+        // This is a new async operation. The wasm is paused and has unwound its stack.
+        // We need to return a Promise that resolves the return value
+        // once the stack is rewound and execution finishes.
+        assert(asyncMode, 'The call to ' + ident + ' is running asynchronously. If this was intended, add the async option to the ccall/cwrap call.');
+        return Asyncify.whenDone().then(onDone);
+      }
+  
+      ret = onDone(ret);
+      // If this is an async ccall, ensure we return a promise
+      if (asyncMode) return Promise.resolve(ret);
+      return ret;
+    };
+
+  
+    /**
+   * @param {string=} returnType
+   * @param {Array=} argTypes
+   * @param {Object=} opts
+   */
+  var cwrap = (ident, returnType, argTypes, opts) => {
+      return (...args) => ccall(ident, returnType, argTypes, args, opts);
+    };
 
       Module['requestAnimationFrame'] = MainLoop.requestAnimationFrame;
       Module['pauseMainLoop'] = MainLoop.pause;
@@ -7253,6 +7385,8 @@ Module['FS_createPreloadedFile'] = FS.createPreloadedFile;
 }
 
 // Begin runtime exports
+  Module['ccall'] = ccall;
+  Module['cwrap'] = cwrap;
   var missingLibrarySymbols = [
   'writeI53ToI64',
   'writeI53ToI64Clamped',
@@ -7291,8 +7425,6 @@ Module['FS_createPreloadedFile'] = FS.createPreloadedFile;
   'STACK_ALIGN',
   'POINTER_SIZE',
   'ASSERTIONS',
-  'ccall',
-  'cwrap',
   'convertJsFunctionToWasm',
   'getEmptyTableSlot',
   'updateTableMap',
@@ -7309,7 +7441,6 @@ Module['FS_createPreloadedFile'] = FS.createPreloadedFile;
   'UTF32ToString',
   'stringToUTF32',
   'lengthBytesUTF32',
-  'writeArrayToMemory',
   'registerKeyEventCallback',
   'registerUiEventCallback',
   'fillDeviceOrientationEventData',
@@ -7390,10 +7521,7 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'HEAPF32',
   'HEAPF64',
   'HEAP8',
-  'HEAPU8',
   'HEAP16',
-  'HEAPU16',
-  'HEAP32',
   'HEAPU32',
   'HEAP64',
   'HEAPU64',
@@ -7453,6 +7581,7 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'UTF16Decoder',
   'stringToNewUTF8',
   'stringToUTF8OnStack',
+  'writeArrayToMemory',
   'JSEvents',
   'specialHTMLTargets',
   'maybeCStringToJsString',
@@ -7551,15 +7680,55 @@ unexportedSymbols.forEach(unexportedRuntimeSymbol);
 
 function checkIncomingModuleAPI() {
   ignoredModuleProp('fetchSettings');
+  ignoredModuleProp('logReadFiles');
+  ignoredModuleProp('loadSplitModule');
 }
 var ASM_CONSTS = {
-  1388800: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
+  1389096: ($0) => { return Module.glfwGetWindow(UTF8ToString($0)); }
 };
+function __asyncjs__webhid_disconnect_js() { return Asyncify.handleAsync(async () => { console.log("webhid_disconnect_js"); const device = Module.device; if (!device) { console.error("!No device connected! Call connect first."); return -1; } try { await device.close(); console.log("closed"); } catch (err) { console.error("Failed to close:", err); return -1; } try { await device.forget(); console.log("forget"); } catch (err) { console.error("Failed to forget:", err); return -1; } Module.device = null; return 0; }); }
+function __asyncjs__webhid_connect_js() { return Asyncify.handleAsync(async () => { console.log("webhid_connect_js"); if (!navigator.hid) { console.error("!navigator.hid"); return -1; } Module['device'] = null; Module['event_check'] = 0; Module['interval'] = 0; Module['packwrite'] = 0; Module['packread'] = 0; Module['packbuf'] = new Uint8Array(200*64); try { const devices = await navigator.hid.requestDevice({filters: [{vendorId: 0x7777,},],}); if (devices.length > 0) { const device = devices[0]; Module.device = device; console.log("Wasm success! Connected to:", device.productName); await device.open(); console.log("Device opened."); { var pos_fw = device.productName.indexOf("FWv"); if (pos_fw < 0) { webhid_disconnect_js(); console.error("!Firmware version"); return -1; } var fws = device.productName.substring(pos_fw+3, pos_fw+7); var fwv = parseInt(fws, 10); if ((fwv >= 100 && fwv < 178) || (fwv >= 300 && fwv < 358) || (fwv >= 400 && fwv < 458)) { webhid_disconnect_js(); alertUI("!Firmware upgrade needed"); return -1; } var pos_sn = device.productName.indexOf(" SN"); if (pos_sn < 0) { webhid_disconnect_js(); console.error("!Firmware version"); return -1; } var sns = device.productName.substring(pos_sn+3, pos_sn+13); console.log("SN:", sns); } } else { console.error("!No device was selected."); return -1; } } catch (err) { console.error("HID Error:", err); return -1; } return 0; }); }
+function __asyncjs__webhid_send_report_js(report_id,buffer,length) { return Asyncify.handleAsync(async () => { const device = Module.device; if (!device) { console.error("No device connected! Call connect first."); return -1; } const data = new Uint8Array(Module.HEAPU8.buffer, buffer, length); try { await device.sendFeatureReport(report_id, data); } catch (err) { console.error("Failed to send report:", err); return -1; } return 0; }); }
+function event_packet_js(event) { Module.event_check = 1; const event_buf8 = new Uint8Array(event.data.buffer, 0, 64); const ofs = 64*Module.packwrite; for (let i = 0; i < 64; i++) { Module.packbuf[ofs + i] = event_buf8[i]; } Module.packwrite++; if (Module.packwrite == 200) { Module.packwrite = 0; } if (Module.packwrite == Module.packread) { console.error("!overrun"); } }
+function event_check_js() { if (Module.event_check == 0) { console.error("!EventCheck"); return -1; } Module.event_check = 0; return 0; }
+function webhid_start_js(no_start) { console.log("start"); const device = Module.device; if (!device) { console.error("No device connected!"); return -1; } Module.packread = 0; Module.packwrite = 0; Module.error_send = 0; Module.event_check = 1; Module.interval = window.setInterval(event_check_js, 1000); device.oninputreport = event_packet_js; return 0; }
+function webhid_stop_js() { console.log("stop"); const device = Module.device; if (!device) { console.error("No device connected!"); return -1; } window.clearInterval(Module.interval); Module.interval = 0; device.oninputreport = null; return 0; }
+function webhid_read_js(usb_pack_ptr) { if (Module.packread == Module.packwrite) { return -2; } const usb_pack_view = new Uint8Array(Module.HEAPU8.buffer, usb_pack_ptr, 64); const ofs = 64*Module.packread; for (let i = 0; i < 64; i++) { usb_pack_view[i] = Module.packbuf[ofs + i]; } Module.packread++; if (Module.packread == 200) { Module.packread = 0; } return Module.packread; }
 
 // Imports from the Wasm binary.
-var _free = makeInvalidEarlyAccess('_free');
-var _malloc = makeInvalidEarlyAccess('_malloc');
+var __Z8crx_readv = Module['__Z8crx_readv'] = makeInvalidEarlyAccess('__Z8crx_readv');
+var __Z10crx_get_hrv = Module['__Z10crx_get_hrv'] = makeInvalidEarlyAccess('__Z10crx_get_hrv');
+var __Z8crx_beepv = Module['__Z8crx_beepv'] = makeInvalidEarlyAccess('__Z8crx_beepv');
+var __Z12crx_set_gridiiii = Module['__Z12crx_set_gridiiii'] = makeInvalidEarlyAccess('__Z12crx_set_gridiiii');
+var __Z15crx_get_ofs_maxv = Module['__Z15crx_get_ofs_maxv'] = makeInvalidEarlyAccess('__Z15crx_get_ofs_maxv');
+var __Z17crx_get_freq_convPiiii = Module['__Z17crx_get_freq_convPiiii'] = makeInvalidEarlyAccess('__Z17crx_get_freq_convPiiii');
+var __Z15crx_lead_name_ni = Module['__Z15crx_lead_name_ni'] = makeInvalidEarlyAccess('__Z15crx_lead_name_ni');
 var _main = Module['_main'] = makeInvalidEarlyAccess('_main');
+var __Z11crx_versionv = Module['__Z11crx_versionv'] = makeInvalidEarlyAccess('__Z11crx_versionv');
+var __Z8crx_initi = Module['__Z8crx_initi'] = makeInvalidEarlyAccess('__Z8crx_initi');
+var __Z12crx_font_ptrv = Module['__Z12crx_font_ptrv'] = makeInvalidEarlyAccess('__Z12crx_font_ptrv');
+var __Z13crx_font_sizev = Module['__Z13crx_font_sizev'] = makeInvalidEarlyAccess('__Z13crx_font_sizev');
+var __Z8crx_exitv = Module['__Z8crx_exitv'] = makeInvalidEarlyAccess('__Z8crx_exitv');
+var __Z8crx_usecv = Module['__Z8crx_usecv'] = makeInvalidEarlyAccess('__Z8crx_usecv');
+var __Z20crx_set_noise_filteri = Module['__Z20crx_set_noise_filteri'] = makeInvalidEarlyAccess('__Z20crx_set_noise_filteri');
+var __Z19crx_set_base_filteri = Module['__Z19crx_set_base_filteri'] = makeInvalidEarlyAccess('__Z19crx_set_base_filteri');
+var __Z13crx_set_speedi = Module['__Z13crx_set_speedi'] = makeInvalidEarlyAccess('__Z13crx_set_speedi');
+var __Z12crx_set_ampli = Module['__Z12crx_set_ampli'] = makeInvalidEarlyAccess('__Z12crx_set_ampli');
+var __Z14crx_set_devicei = Module['__Z14crx_set_devicei'] = makeInvalidEarlyAccess('__Z14crx_set_devicei');
+var __Z18crx_placement_namei = Module['__Z18crx_placement_namei'] = makeInvalidEarlyAccess('__Z18crx_placement_namei');
+var __Z14crx_leads_namei = Module['__Z14crx_leads_namei'] = makeInvalidEarlyAccess('__Z14crx_leads_namei');
+var __Z18crx_set_leads_propiiii = Module['__Z18crx_set_leads_propiiii'] = makeInvalidEarlyAccess('__Z18crx_set_leads_propiiii');
+var __Z13crx_set_leadsi = Module['__Z13crx_set_leadsi'] = makeInvalidEarlyAccess('__Z13crx_set_leadsi');
+var __Z8crx_stopv = Module['__Z8crx_stopv'] = makeInvalidEarlyAccess('__Z8crx_stopv');
+var __Z9crx_startv = Module['__Z9crx_startv'] = makeInvalidEarlyAccess('__Z9crx_startv');
+var _malloc = makeInvalidEarlyAccess('_malloc');
+var _free = makeInvalidEarlyAccess('_free');
+var _crx_webhid_connect = Module['_crx_webhid_connect'] = makeInvalidEarlyAccess('_crx_webhid_connect');
+var _crx_webhid_stop = Module['_crx_webhid_stop'] = makeInvalidEarlyAccess('_crx_webhid_stop');
+var _crx_webhid_disconnect = Module['_crx_webhid_disconnect'] = makeInvalidEarlyAccess('_crx_webhid_disconnect');
+var _crx_webhid_start = Module['_crx_webhid_start'] = makeInvalidEarlyAccess('_crx_webhid_start');
+var __Z9crx_sleepj = Module['__Z9crx_sleepj'] = makeInvalidEarlyAccess('__Z9crx_sleepj');
+var __Z18crx_set_sin_filteriiii = Module['__Z18crx_set_sin_filteriiii'] = makeInvalidEarlyAccess('__Z18crx_set_sin_filteriiii');
 var _emwgpuCreateBindGroup = makeInvalidEarlyAccess('_emwgpuCreateBindGroup');
 var _emwgpuCreateBindGroupLayout = makeInvalidEarlyAccess('_emwgpuCreateBindGroupLayout');
 var _emwgpuCreateCommandBuffer = makeInvalidEarlyAccess('_emwgpuCreateCommandBuffer');
@@ -7628,9 +7797,39 @@ var __indirect_function_table = makeInvalidEarlyAccess('__indirect_function_tabl
 var wasmMemory = makeInvalidEarlyAccess('wasmMemory');
 
 function assignWasmExports(wasmExports) {
-  assert(typeof wasmExports['free'] != 'undefined', 'missing Wasm export: free');
-  assert(typeof wasmExports['malloc'] != 'undefined', 'missing Wasm export: malloc');
+  assert(typeof wasmExports['_Z8crx_readv'] != 'undefined', 'missing Wasm export: _Z8crx_readv');
+  assert(typeof wasmExports['_Z10crx_get_hrv'] != 'undefined', 'missing Wasm export: _Z10crx_get_hrv');
+  assert(typeof wasmExports['_Z8crx_beepv'] != 'undefined', 'missing Wasm export: _Z8crx_beepv');
+  assert(typeof wasmExports['_Z12crx_set_gridiiii'] != 'undefined', 'missing Wasm export: _Z12crx_set_gridiiii');
+  assert(typeof wasmExports['_Z15crx_get_ofs_maxv'] != 'undefined', 'missing Wasm export: _Z15crx_get_ofs_maxv');
+  assert(typeof wasmExports['_Z17crx_get_freq_convPiiii'] != 'undefined', 'missing Wasm export: _Z17crx_get_freq_convPiiii');
+  assert(typeof wasmExports['_Z15crx_lead_name_ni'] != 'undefined', 'missing Wasm export: _Z15crx_lead_name_ni');
   assert(typeof wasmExports['__main_argc_argv'] != 'undefined', 'missing Wasm export: __main_argc_argv');
+  assert(typeof wasmExports['_Z11crx_versionv'] != 'undefined', 'missing Wasm export: _Z11crx_versionv');
+  assert(typeof wasmExports['_Z8crx_initi'] != 'undefined', 'missing Wasm export: _Z8crx_initi');
+  assert(typeof wasmExports['_Z12crx_font_ptrv'] != 'undefined', 'missing Wasm export: _Z12crx_font_ptrv');
+  assert(typeof wasmExports['_Z13crx_font_sizev'] != 'undefined', 'missing Wasm export: _Z13crx_font_sizev');
+  assert(typeof wasmExports['_Z8crx_exitv'] != 'undefined', 'missing Wasm export: _Z8crx_exitv');
+  assert(typeof wasmExports['_Z8crx_usecv'] != 'undefined', 'missing Wasm export: _Z8crx_usecv');
+  assert(typeof wasmExports['_Z20crx_set_noise_filteri'] != 'undefined', 'missing Wasm export: _Z20crx_set_noise_filteri');
+  assert(typeof wasmExports['_Z19crx_set_base_filteri'] != 'undefined', 'missing Wasm export: _Z19crx_set_base_filteri');
+  assert(typeof wasmExports['_Z13crx_set_speedi'] != 'undefined', 'missing Wasm export: _Z13crx_set_speedi');
+  assert(typeof wasmExports['_Z12crx_set_ampli'] != 'undefined', 'missing Wasm export: _Z12crx_set_ampli');
+  assert(typeof wasmExports['_Z14crx_set_devicei'] != 'undefined', 'missing Wasm export: _Z14crx_set_devicei');
+  assert(typeof wasmExports['_Z18crx_placement_namei'] != 'undefined', 'missing Wasm export: _Z18crx_placement_namei');
+  assert(typeof wasmExports['_Z14crx_leads_namei'] != 'undefined', 'missing Wasm export: _Z14crx_leads_namei');
+  assert(typeof wasmExports['_Z18crx_set_leads_propiiii'] != 'undefined', 'missing Wasm export: _Z18crx_set_leads_propiiii');
+  assert(typeof wasmExports['_Z13crx_set_leadsi'] != 'undefined', 'missing Wasm export: _Z13crx_set_leadsi');
+  assert(typeof wasmExports['_Z8crx_stopv'] != 'undefined', 'missing Wasm export: _Z8crx_stopv');
+  assert(typeof wasmExports['_Z9crx_startv'] != 'undefined', 'missing Wasm export: _Z9crx_startv');
+  assert(typeof wasmExports['malloc'] != 'undefined', 'missing Wasm export: malloc');
+  assert(typeof wasmExports['free'] != 'undefined', 'missing Wasm export: free');
+  assert(typeof wasmExports['crx_webhid_connect'] != 'undefined', 'missing Wasm export: crx_webhid_connect');
+  assert(typeof wasmExports['crx_webhid_stop'] != 'undefined', 'missing Wasm export: crx_webhid_stop');
+  assert(typeof wasmExports['crx_webhid_disconnect'] != 'undefined', 'missing Wasm export: crx_webhid_disconnect');
+  assert(typeof wasmExports['crx_webhid_start'] != 'undefined', 'missing Wasm export: crx_webhid_start');
+  assert(typeof wasmExports['_Z9crx_sleepj'] != 'undefined', 'missing Wasm export: _Z9crx_sleepj');
+  assert(typeof wasmExports['_Z18crx_set_sin_filteriiii'] != 'undefined', 'missing Wasm export: _Z18crx_set_sin_filteriiii');
   assert(typeof wasmExports['emwgpuCreateBindGroup'] != 'undefined', 'missing Wasm export: emwgpuCreateBindGroup');
   assert(typeof wasmExports['emwgpuCreateBindGroupLayout'] != 'undefined', 'missing Wasm export: emwgpuCreateBindGroupLayout');
   assert(typeof wasmExports['emwgpuCreateCommandBuffer'] != 'undefined', 'missing Wasm export: emwgpuCreateCommandBuffer');
@@ -7696,9 +7895,39 @@ function assignWasmExports(wasmExports) {
   assert(typeof wasmExports['asyncify_stop_rewind'] != 'undefined', 'missing Wasm export: asyncify_stop_rewind');
   assert(typeof wasmExports['memory'] != 'undefined', 'missing Wasm export: memory');
   assert(typeof wasmExports['__indirect_function_table'] != 'undefined', 'missing Wasm export: __indirect_function_table');
-  _free = createExportWrapper('free', 1);
-  _malloc = createExportWrapper('malloc', 1);
+  __Z8crx_readv = Module['__Z8crx_readv'] = createExportWrapper('_Z8crx_readv', 0);
+  __Z10crx_get_hrv = Module['__Z10crx_get_hrv'] = createExportWrapper('_Z10crx_get_hrv', 0);
+  __Z8crx_beepv = Module['__Z8crx_beepv'] = createExportWrapper('_Z8crx_beepv', 0);
+  __Z12crx_set_gridiiii = Module['__Z12crx_set_gridiiii'] = createExportWrapper('_Z12crx_set_gridiiii', 4);
+  __Z15crx_get_ofs_maxv = Module['__Z15crx_get_ofs_maxv'] = createExportWrapper('_Z15crx_get_ofs_maxv', 0);
+  __Z17crx_get_freq_convPiiii = Module['__Z17crx_get_freq_convPiiii'] = createExportWrapper('_Z17crx_get_freq_convPiiii', 4);
+  __Z15crx_lead_name_ni = Module['__Z15crx_lead_name_ni'] = createExportWrapper('_Z15crx_lead_name_ni', 1);
   _main = Module['_main'] = createExportWrapper('__main_argc_argv', 2);
+  __Z11crx_versionv = Module['__Z11crx_versionv'] = createExportWrapper('_Z11crx_versionv', 0);
+  __Z8crx_initi = Module['__Z8crx_initi'] = createExportWrapper('_Z8crx_initi', 1);
+  __Z12crx_font_ptrv = Module['__Z12crx_font_ptrv'] = createExportWrapper('_Z12crx_font_ptrv', 0);
+  __Z13crx_font_sizev = Module['__Z13crx_font_sizev'] = createExportWrapper('_Z13crx_font_sizev', 0);
+  __Z8crx_exitv = Module['__Z8crx_exitv'] = createExportWrapper('_Z8crx_exitv', 0);
+  __Z8crx_usecv = Module['__Z8crx_usecv'] = createExportWrapper('_Z8crx_usecv', 0);
+  __Z20crx_set_noise_filteri = Module['__Z20crx_set_noise_filteri'] = createExportWrapper('_Z20crx_set_noise_filteri', 1);
+  __Z19crx_set_base_filteri = Module['__Z19crx_set_base_filteri'] = createExportWrapper('_Z19crx_set_base_filteri', 1);
+  __Z13crx_set_speedi = Module['__Z13crx_set_speedi'] = createExportWrapper('_Z13crx_set_speedi', 1);
+  __Z12crx_set_ampli = Module['__Z12crx_set_ampli'] = createExportWrapper('_Z12crx_set_ampli', 1);
+  __Z14crx_set_devicei = Module['__Z14crx_set_devicei'] = createExportWrapper('_Z14crx_set_devicei', 1);
+  __Z18crx_placement_namei = Module['__Z18crx_placement_namei'] = createExportWrapper('_Z18crx_placement_namei', 1);
+  __Z14crx_leads_namei = Module['__Z14crx_leads_namei'] = createExportWrapper('_Z14crx_leads_namei', 1);
+  __Z18crx_set_leads_propiiii = Module['__Z18crx_set_leads_propiiii'] = createExportWrapper('_Z18crx_set_leads_propiiii', 4);
+  __Z13crx_set_leadsi = Module['__Z13crx_set_leadsi'] = createExportWrapper('_Z13crx_set_leadsi', 1);
+  __Z8crx_stopv = Module['__Z8crx_stopv'] = createExportWrapper('_Z8crx_stopv', 0);
+  __Z9crx_startv = Module['__Z9crx_startv'] = createExportWrapper('_Z9crx_startv', 0);
+  _malloc = createExportWrapper('malloc', 1);
+  _free = createExportWrapper('free', 1);
+  _crx_webhid_connect = Module['_crx_webhid_connect'] = createExportWrapper('crx_webhid_connect', 0);
+  _crx_webhid_stop = Module['_crx_webhid_stop'] = createExportWrapper('crx_webhid_stop', 0);
+  _crx_webhid_disconnect = Module['_crx_webhid_disconnect'] = createExportWrapper('crx_webhid_disconnect', 0);
+  _crx_webhid_start = Module['_crx_webhid_start'] = createExportWrapper('crx_webhid_start', 0);
+  __Z9crx_sleepj = Module['__Z9crx_sleepj'] = createExportWrapper('_Z9crx_sleepj', 1);
+  __Z18crx_set_sin_filteriiii = Module['__Z18crx_set_sin_filteriiii'] = createExportWrapper('_Z18crx_set_sin_filteriiii', 4);
   _emwgpuCreateBindGroup = createExportWrapper('emwgpuCreateBindGroup', 1);
   _emwgpuCreateBindGroupLayout = createExportWrapper('emwgpuCreateBindGroupLayout', 1);
   _emwgpuCreateCommandBuffer = createExportWrapper('emwgpuCreateCommandBuffer', 1);
@@ -7770,6 +7999,12 @@ var wasmImports = {
   /** @export */
   __assert_fail: ___assert_fail,
   /** @export */
+  __asyncjs__webhid_connect_js,
+  /** @export */
+  __asyncjs__webhid_disconnect_js,
+  /** @export */
+  __asyncjs__webhid_send_report_js,
+  /** @export */
   __cxa_throw: ___cxa_throw,
   /** @export */
   _abort_js: __abort_js,
@@ -7785,6 +8020,8 @@ var wasmImports = {
   alGenSources: _alGenSources,
   /** @export */
   alSourcePlay: _alSourcePlay,
+  /** @export */
+  alSourceStop: _alSourceStop,
   /** @export */
   alSourcei: _alSourcei,
   /** @export */
@@ -7855,6 +8092,8 @@ var wasmImports = {
   emscripten_glfw3_destroy_custom_cursor: _emscripten_glfw3_destroy_custom_cursor,
   /** @export */
   emscripten_has_asyncify: _emscripten_has_asyncify,
+  /** @export */
+  emscripten_html5_remove_event_listener: _emscripten_html5_remove_event_listener,
   /** @export */
   emscripten_request_fullscreen: _emscripten_request_fullscreen,
   /** @export */
@@ -7933,6 +8172,12 @@ var wasmImports = {
   fd_seek: _fd_seek,
   /** @export */
   fd_write: _fd_write,
+  /** @export */
+  webhid_read_js,
+  /** @export */
+  webhid_start_js,
+  /** @export */
+  webhid_stop_js,
   /** @export */
   wgpuAdapterGetInfo: _wgpuAdapterGetInfo,
   /** @export */
@@ -8089,7 +8334,7 @@ run();
 // and return either the Module itself, or a promise of the module.
 //
 // We assign to the `moduleRtn` global here and configure closure to see
-// this as and extern so it won't get minified.
+// this as an extern so it won't get minified.
 
 if (runtimeInitialized)  {
   moduleRtn = Module;
